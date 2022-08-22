@@ -1,0 +1,84 @@
+---
+title: "Test"
+output: 
+  learnr::tutorial:
+    progressive: true
+runtime: shiny_prerendered
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+library(mlr3tuning)
+task = tsk("pima")
+learner = lrn("classif.rpart", cp = to_tune(1e-04, 1e-1, logscale = TRUE))
+instance = tune(
+  method = "random_search",
+  task = task,
+  learner = learner,
+  resampling = rsmp("cv", folds = 3),
+  measure = msr("classif.ce"),
+  term_evals = 10,
+  batch_size = 5
+)
+
+custom_checker <- function(label, user_code, solution_code, stage = "code_check", ...) {
+  # this is a code check
+  print(solution_code)
+  if (stage == "code_check") {
+    if (user_code != solution_code) {
+      return(list(message = "I wasn't expecting that code", correct = FALSE))
+    }
+    return(list(message = "Nice code!", correct = TRUE))
+  }
+  return(list(message = "Great job!", correct = TRUE, location = "append"))
+}
+
+tutorial_options(exercise.checker = custom_checker)
+```
+
+
+We have a classification task at hand. <Insert information abt. task>. So far we have defined the necessary task: 
+```{r task}
+task = tsk("pima")
+
+### information abt. columns 
+print(task$col_info)
+### first rows of data
+print(task$backend) 
+```
+
+We want to use a classification tree to tackle the task. So far we have defined one learner with fixed hyperparameters: 
+```{r}
+learner = lrn("classif.rpart", cp = 0.02)
+```
+
+However, we aren't sure that cp = 0.02 is the optimal setting for the cp argument. Therefore, we want to user hyperparameter tuning to find the optimal value for cp. Add the missing code in order to initialize a classification tree with hyperparameter tuning: 
+```{r learner, exercise=TRUE}
+learner = lrn("classif.rpart", cp = "your code")
+```
+
+<div id="filter-hint">
+**Hint:** You may want to look at the mlr3 documentation.
+</div>
+
+```{r learner-solution}
+learner <- lrn("classif.rpart", cp = to_tune(1e-04, 1e-1, logscale = TRUE)) 
+```
+
+```{r learner-check}
+custom_checker(label = exercise$label, user_code = exercise$code, solution_code = exercise$solution , stage = "code_check")
+```
+
+Write the code for tuning the learner that you have specified! We want to use 3-fold cross validation and the cassification error as measure!.
+```{r model, exercise = TRUE}
+instance = tune(
+  method = "your code",
+  task = task,
+  learner = "your code",
+  resampling = "your code",
+  measure = "your code",
+  term_evals = 10,
+  batch_size = 5
+)
+```
+
