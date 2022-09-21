@@ -31,6 +31,10 @@ lrnClassifSol = lrn("classif.log_reg")
 lrnClassifSol$train(taskClassifSol)
 lrnClassifSol$predict(taskClassifSol)
 
+### needed for PE 
+resampling = rsmp("holdout", ratio = 2/3)
+resRegr = resample(taskRegr, learner = lrnRegr, resampling = resampling)
+resClassSol = resample(taskClassifSol, learner = lrnClassifSol, resampling = resampling)
 ```
 
 ## The data {data-progressive=FALSE}
@@ -148,7 +152,7 @@ lrnClassif$train(taskClassif)
 lrnRegr$predict(taskRegr)
 ```
 
-```{r predict,  exercise=TRUE, exercise.setup = "predict_prerequesits"}
+```{r predict, exercise=TRUE, exercise.setup = "predict_prerequesits"}
 "your code"
 ```
 
@@ -161,6 +165,41 @@ lrnClassif$predict(taskClassif)
 ```
 
 ## 3 Performance evaluation
-### Defining a measure
-### Evaluation with m1 
-### Evaluation with m2 
+Now we want to have look how well our learners perform. For now, we will evaluate the performance using a simple train/test split  ("holdout solitting"). Later in the course you will learn why this is not the preferred way and what state of the art methods there are to test performance. 
+
+### Defining a resampling strategy
+First of all we define a resampling strategy using the rsmp() function: 
+```{r} 
+resampling = rsmp("holdout", ratio = 2/3)
+``` 
+
+Now, in order to actually perform the resampling strategy we have defined above, we use the resample() function. We have already done this for
+the regression task: 
+```{r} 
+resRegr = resample(taskRegr, learner = lrnRegr, resampling = resampling)
+``` 
+
+Now its your turn. Perform the resampling for the classification problem: 
+```{r resampling, exercise=TRUE, exercise.setup = "predict_prerequesits"} 
+resClass = "your Code"
+``` 
+
+```{r resampling-solution} 
+resClass = resample(taskClassif, learner = lrnClassif, resampling = resampling)
+``` 
+
+```{r resampling-check}
+checker_endpoint()
+```
+### Evaluation
+Now we want to examine the performance of our learner on the test data. Depending on the chosen learner there are numerous performance 
+measures that you can use to evaluate the performance. Generally, in mlr3 using the resample()-function, we can use the aggregate-function of the resample()-object to have a look into the performance. 
+
+```{r} 
+resRegr$aggregate()
+``` 
+
+Evaluate the performance of the classification learner using the aggregrate function! You can also experiment with different performance measures. 
+```{r evaluation, exercise = TRUE, exercise.setup = "resampling-solution"} 
+"your code" 
+``` 

@@ -28,16 +28,18 @@ checker_endpoint <-
     else if (label == "train") {
       return(checker_train(user_code, solution_code, envir_result))
     }
+    else if (label == "resample"){
+      return(checker_resample(user_code, solution_code, envir_result))
+    }
   }
 
 
-checker_task <-
-  function(envir, backend) {
+checker_task <- function(envir, backend) {
     print(ls(envir))
-    task_classif <- envir$taskClassifSol
+    taskClassifSol <- envir$taskClassifSol
     bool_correctness <- TRUE
     message <- "Everything looks fine! Run your code!"
-    # check if variable "taskClassif" (=task specified by user) is in exercise environment
+    # check if variable "taskClassif" (= task specified by user) is in exercise environment
     if (!("taskClassif" %in% ls(envir))) {
       message <-
         "Make sure you use the variable name specified in the exercise chunk!"
@@ -72,7 +74,7 @@ checker_task <-
         "There is something wrong with the backend you've specified. Make sure to use the correct data set!"
     }
     ## check target of task
-    if (task$target_names != task_classif$target_names) {
+    if (task$target_names != taskClassifSol$target_names) {
       bool_correctness <- FALSE
       message <-
         "There is something wrong with the backend you've specified. Make sure to use the correct column as target!"
@@ -148,6 +150,33 @@ checker_predict <-
   }
 
 checker_train <-
+  function(user_code,
+           solution_code, envir) {
+    print(ls(envir))
+    print(user_code)
+    print(solution_code)
+    if (user_code %in% solution_code) {
+      return(
+        list(
+          message = "Everything looks fine! Run your code!",
+          correct = TRUE,
+          location = "append"
+        )
+      )
+    }
+    else {
+      return(
+        list(
+          message = "There is something wrong with your function. Check for spelling errors or if your have used the correct data for training!",
+          correct = FALSE,
+          location = "append"
+        )
+      )
+    }
+  }
+
+
+checker_resampling <-
   function(user_code,
            solution_code, envir) {
     print(ls(envir))
