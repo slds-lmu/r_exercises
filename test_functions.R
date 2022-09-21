@@ -28,8 +28,8 @@ checker_endpoint <-
     else if (label == "train") {
       return(checker_train(user_code, solution_code, envir_result))
     }
-    else if (label == "resample"){
-      return(checker_resample(user_code, solution_code, envir_result))
+    else if (label == "resampling"){
+      return(checker_resampling(user_code, solution_code, envir_result))
     }
   }
 
