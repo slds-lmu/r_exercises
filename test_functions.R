@@ -1,3 +1,9 @@
+library(learnr)
+library(rchallenge)
+library(mlr3)
+library(mlr3learners)
+library(skimr)
+
 ### Endpoint for various checkerfunctions
 ### Relevant input Arguments:
 ### label = String corresponding to the name of the chunk from which the checker is calles (e.g. "task")
@@ -31,6 +37,12 @@ checker_endpoint <-
     else if (label == "resampling"){
       return(checker_resampling(user_code, solution_code, envir_result))
     }
+    else if (label == "data"){
+      return(checker_data(user_code, solution_code, envir_result))
+    }
+    else if (label == "pe"){
+      return(checker_pe(user_code, solution_code, envir_result))
+    }
   }
 
 
@@ -51,6 +63,7 @@ checker_task <- function(envir, backend) {
       ))
     }
     task <- envir$taskClassif
+    print(class(task))
     # check if task-Variable is of class Task
     if (!("Task" %in% class(task))) {
       return(
@@ -125,36 +138,14 @@ checker_learner <- function(envir) {
   ))
 }
 
-checker_predict <-
-  function(user_code,
-           solution_code, envir) {
-    print(ls(envir))
-    if (user_code == solution_code) {
-      return(
-        list(
-          message = "Everything looks fine! Run your code!",
-          correct = TRUE,
-          location = "append"
-        )
-      )
-    }
-    else {
-      return(
-        list(
-          message = "There is something wrong with your function. Check for spelling errors or if your have used the correct data for prediction!",
-          correct = FALSE,
-          location = "append"
-        )
-      )
-    }
-  }
-
 checker_train <-
   function(user_code,
            solution_code, envir) {
     print(ls(envir))
     print(user_code)
     print(solution_code)
+    user_code <- gsub(" |[\r\n]+", "", user_code)
+    solution_code <- gsub(" ", "", solution_code)
     if (user_code %in% solution_code) {
       return(
         list(
@@ -167,7 +158,36 @@ checker_train <-
     else {
       return(
         list(
-          message = "There is something wrong with your function. Check for spelling errors or if your have used the correct data for training!",
+          message = "There is something wrong with your function. Check for spelling errors and that you use the correct data/ids for training!",
+          correct = FALSE,
+          location = "append"
+        )
+      )
+    }
+  }
+
+
+checker_predict <-
+  function(user_code,
+           solution_code, envir) {
+    print(ls(envir))
+    print(user_code)
+    print(solution_code)
+    user_code <- gsub(" |[\r\n]+", "", user_code)
+    solution_code <- gsub(" ", "", solution_code)
+    if (user_code %in% solution_code) {
+      return(
+        list(
+          message = "Everything looks fine! Run your code!",
+          correct = TRUE,
+          location = "append"
+        )
+      )
+    }
+    else {
+      return(
+        list(
+          message = "There is something wrong with your function. Check for spelling errors and that you use the correct data/ids for prediction!",
           correct = FALSE,
           location = "append"
         )
@@ -182,6 +202,8 @@ checker_resampling <-
     print(ls(envir))
     print(user_code)
     print(solution_code)
+    user_code <- gsub(" |[\r\n]+", "", user_code)
+    solution_code <- gsub(" ", "", solution_code)
     if (user_code %in% solution_code) {
       return(
         list(
@@ -201,3 +223,60 @@ checker_resampling <-
       )
     }
   }
+
+checker_data <-
+  function(user_code,
+           solution_code, envir) {
+    print(ls(envir))
+    print(user_code)
+    print(solution_code)
+    user_code <- gsub(" |[\r\n]+", "", user_code)
+    solution_code <- gsub(" ", "", solution_code)
+    if (user_code %in% solution_code) {
+      return(
+        list(
+          message = "Everything looks fine! Run your code!",
+          correct = TRUE,
+          location = "append"
+        )
+      )
+    }
+    else {
+      return(
+        list(
+          message = "There is something wrong with your split. Make sure you use the correct task, the correct split ration (0.8) and the variable name given in the exercise.",
+          correct = FALSE,
+          location = "append"
+        )
+      )
+    }
+  }
+
+checker_pe <-
+  function(user_code,
+           solution_code, envir) {
+    print(ls(envir))
+    print(user_code)
+    print(solution_code)
+    user_code <- gsub(" |[\r\n]+", "", user_code)
+    solution_code <- gsub(" ", "", solution_code)
+    if (user_code %in% solution_code) {
+      return(
+        list(
+          message = "Everything looks fine! Run your code!",
+          correct = TRUE,
+          location = "append"
+        )
+      )
+    }
+    else {
+      return(
+        list(
+          message = "Make sure you use the classification error as measure and the correct predictions!",
+          correct = FALSE,
+          location = "append"
+        )
+      )
+    }
+  }
+
