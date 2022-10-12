@@ -14,34 +14,10 @@ library(rchallenge)
 library(mlr3)
 library(mlr3learners)
 library(skimr)
+library(mlr3viz)
 
 source("test_functions.R", local = knitr::knit_global())
-show.next <- FALSE
-tutorial_options(exercise.checker = checker_endpoint, exercise.reveal_solution = FALSE)
-
-data("german", package = "rchallenge")
-data("BostonHousing", package = "mlbench")
-
-### needed for r example r chunks
-taskRegr = as_task_regr(BostonHousing, id = "BostonHousing", target = "medv")
-splitsRegr <-  mlr3::partition(taskRegr, ratio = 0.8)
-lrnRegr = lrn("regr.rpart")
-lrnRegr$train(taskRegr, row_ids = splitsRegr$train)
-#lrnRegr$predict(taskRegr, row_ids = splitsRegr$test)
-predRegr <- lrnRegr$predict(taskRegr, row_ids = splitsRegr$test)
-
-### needed for checks in backend
-taskClassifSol = as_task_classif(german, id = "GermanCredit", target = "credit_risk")
-lrnClassifSol = lrn("classif.log_reg")
-lrnClassifSol$train(taskClassifSol)
-lrnClassifSol$predict(taskClassifSol)
-splitsClassifSol = mlr3::partition(taskClassifSol, ratio = 0.8)
-predClassifSol <- lrnClassifSol$predict(taskClassifSol, row_ids = splitsClassifSol$test)
-
-### needed for PE
-resampling = rsmp("holdout", ratio = 2/3)
-resRegr = resample(taskRegr, learner = lrnRegr, resampling = resampling)
-resClassSol = resample(taskClassifSol, learner = lrnClassifSol, resampling = resampling)
+tutorial_options(exercise.checker = checker_endpoint, exercise.reveal_solution = FALSE,  exercise.completion = FALSE)
 ```
 
 ## 1 The data {data-progressive=FALSE}
@@ -123,6 +99,8 @@ taskClassif = as_task_classif(german, id = "GermanCredit", target = "credit_risk
 taskClassif = as_task_classif("your code")
 ```
 
+
+
 ### 2.3 Creatig a train/test split 
 As we don't want to use the same data set for testing and training we split the backends of our tasks into  separate training and test sets.
 
@@ -133,7 +111,7 @@ splitsRegr <-  mlr3::partition(taskRegr, ratio = 0.8)
 
 Now it's your turn. Split the ids of the backend of taskClassif into ids for training and testing using a ratio of 0.8.
 
-```{r data, exercise=TRUE, exercise.setup = "task-solution"}
+```{r data, exercise=TRUE, exercise.reveal_solution = FALSE}
 splitsClassif <- "your code" 
 ```
 
@@ -141,7 +119,7 @@ splitsClassif <- "your code"
 checker_endpoint()
 ```
 
-```{r data-solution, exercise.setup = "task-solution"}
+```{r data-solution}
 splitsClassif <- mlr3::partition(taskClassif, ratio = 0.8)
 ```
 
@@ -167,7 +145,7 @@ As with the task, we have already defined our learner for the regression problem
 lrnRegr = lrn("regr.rpart")
 ```
 
-```{r learner, exercise=TRUE, exercise.setup = "data-solution"}
+```{r learner, exercise=TRUE, exercise.setup = "data"}
 lrnClassif = "Your code"
 ```
 
@@ -175,9 +153,8 @@ lrnClassif = "Your code"
 checker_endpoint()
 ```
 
-```{r learner-solution, exercise.setup = "data-solution"}
+```{r learner-solution}
 lrnClassif = lrn("classif.log_reg")
-#taskClassif = as_task_classif(german, id = "GermanCredit", target = "credit_risk")
 ```
 <div id="filter-hint">
 **Hint:** Have a look at the learner defintions in mlr3: https://mlr3learners.mlr-org.com/.
@@ -188,10 +165,9 @@ Now it's time to train our learners and fit a model! We have already done the tr
 
 ```{r}
 lrnRegr$train(taskRegr, row_ids = splitsRegr$train)
-
 ```
 
-```{r train, exercise=TRUE, exercise.setup = "learner-solution"}
+```{r train, exercise=TRUE}
 "your code"
 ```
 
@@ -199,7 +175,7 @@ lrnRegr$train(taskRegr, row_ids = splitsRegr$train)
 checker_endpoint()
 ```
 
-```{r train-solution, exercise.setup = "learner-solution"}
+```{r train-solution}
 lrnClassif$train(taskClassif, row_ids = splitsClassif$train)
 ```
 <div id="filter-hint">
@@ -221,6 +197,7 @@ question("How many terminal nodes does the fitted tree have?",
   answer("5")
 )
 ```
+
 ### 3.5 Predictions
 Now it's time to make some predictions using our test data.
 
@@ -228,7 +205,7 @@ Now it's time to make some predictions using our test data.
 predRegr <- lrnRegr$predict(taskRegr, row_ids = splitsRegr$test)
 ```
 
-```{r predict, exercise=TRUE, exercise.setup = "train-solution"}
+```{r predict, exercise=TRUE}
 predClassif <- "your code"
 ```
 
@@ -236,7 +213,7 @@ predClassif <- "your code"
 checker_endpoint()
 ```
 
-```{r predict-solution, exercise.setup = "train-solution"}
+```{r predict-solution}
 predClassif <- lrnClassif$predict(taskClassif, row_ids = splitsClassif$test)
 ```
 
@@ -246,12 +223,17 @@ Now we want to have look into the performance of our learners. For now, we will 
 In mlr3 we can use the "$score()"-function to retrieve several performance measures. For the regression 
 problem we have called the MSE of our model.
 
+Let's visualize the predictions of our regression model using th autoplot()-function from mlr3viz: 
+```{r}
+autoplot(predRegr)
+```
+The corresponding MSE is:
 ```{r}
 predRegr$score(measures = msr("regr.mse"))
 ```
 
 Now we want to know the classification error of our classification model. 
-```{r pe, exercise=TRUE, exercise.setup = "predict-solution"}
+```{r pe, exercise=TRUE}
 "your code"
 ```
 

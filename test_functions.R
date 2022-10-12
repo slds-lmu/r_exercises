@@ -4,6 +4,39 @@ library(mlr3)
 library(mlr3learners)
 library(skimr)
 
+data("german", package = "rchallenge")
+data("BostonHousing", package = "mlbench")
+
+### needed for r example r chunks
+taskRegr = as_task_regr(BostonHousing, id = "BostonHousing", target = "medv")
+splitsRegr <-  mlr3::partition(taskRegr, ratio = 0.8)
+lrnRegr = lrn("regr.rpart")
+lrnRegr$train(taskRegr, row_ids = splitsRegr$train)
+#lrnRegr$predict(taskRegr, row_ids = splitsRegr$test)
+predRegr <- lrnRegr$predict(taskRegr, row_ids = splitsRegr$test)
+
+### needed for checks in backend
+taskClassifSol = as_task_classif(german, id = "GermanCredit", target = "credit_risk")
+lrnClassifSol = lrn("classif.log_reg")
+#lrnClassifSol$train(taskClassifSol)
+#lrnClassifSol$predict(taskClassifSol)
+#splitsClassifSol = mlr3::partition(taskClassifSol, ratio = 0.8)
+#predClassifSol <- lrnClassifSol$predict(taskClassifSol, row_ids = splitsClassifSol$test)
+
+taskClassif <- as_task_classif(german, id = "GermanCredit", target = "credit_risk")
+lrnClassif = lrn("classif.log_reg")
+splitsClassif = mlr3::partition(taskClassif, ratio = 0.8)
+lrnClassif$train(taskClassif, row_ids = splitsClassif$train)
+predClassif <- lrnClassif$predict(taskClassif, row_ids = splitsClassif$test)
+
+
+### needed for PE
+resampling = rsmp("holdout", ratio = 2/3)
+resRegr = resample(taskRegr, learner = lrnRegr, resampling = resampling)
+resClassSol = resample(taskClassifSol, learner = lrnClassifSol, resampling = resampling)
+
+
+
 ### Endpoint for various checkerfunctions
 ### Relevant input Arguments:
 ### label = String corresponding to the name of the chunk from which the checker is calles (e.g. "task")
@@ -48,7 +81,7 @@ checker_endpoint <-
 
 checker_task <- function(envir, backend) {
     print(ls(envir))
-    taskClassifSol <- envir$taskClassifSol
+    #taskClassifSol <- envir$taskClassifSol
     bool_correctness <- TRUE
     message <- "Everything looks fine! Run your code!"
     # check if variable "taskClassif" (= task specified by user) is in exercise environment
@@ -92,13 +125,47 @@ checker_task <- function(envir, backend) {
       message <-
         "There is something wrong with the backend you've specified. Make sure to use the correct column as target!"
     }
+    assign("taskClassif", task, envir = .GlobalEnv)
+    #taskClassif <<- task
     return(list(
       message = message,
       correct = bool_correctness,
       location = "append"
     ))
 
+}
+
+
+checker_data <-
+  function(user_code,
+           solution_code, envir) {
+    print(ls(envir))
+    print(user_code)
+    print(solution_code)
+    user_code <- gsub(" |[\r\n]+", "", user_code)
+    solution_code <- gsub(" ", "", solution_code)
+    if (user_code %in% solution_code) {
+      assign("splitsClassif", envir$splitsClassif, envir = .GlobalEnv)
+      return(
+        list(
+          message = "Everything looks fine! Run your code!",
+          correct = TRUE,
+          location = "append"
+        )
+      )
+    }
+    else {
+      return(
+        list(
+          message = "There is something wrong with your split. Make sure you use the correct task, the correct split ration (0.8) and the variable name given in the exercise.",
+          correct = FALSE,
+          location = "append"
+        )
+      )
+    }
   }
+
+
 
 checker_learner <- function(envir) {
   print(ls(envir))
@@ -115,6 +182,8 @@ checker_learner <- function(envir) {
     ))
   }
   learner <- envir$lrnClassif
+  print(class(learner))
+  print(class(lrnClassifSol))
   # check if learner-Variable is of class Learner
   if (!("Learner" %in% class(learner))) {
     return(
@@ -125,12 +194,14 @@ checker_learner <- function(envir) {
       )
     )
   }
+  print(class(learner) == class(lrnClassifSol))
   ### check learner
-  if (!(class(learner) == class(envir$lrnClassifSol))) {
+  if (!(class(learner)[[1]] == class(lrnClassifSol))[[1]]) {
     bool_correctness <- FALSE
     message <-
       "There is something wrong with the learner you've specified"
   }
+  assign("lrnClassif", envir$lrnClassif, envir = .GlobalEnv)
   return(list(
     message = message,
     correct = bool_correctness,
@@ -142,11 +213,16 @@ checker_train <-
   function(user_code,
            solution_code, envir) {
     print(ls(envir))
+    print(envir)
     print(user_code)
     print(solution_code)
     user_code <- gsub(" |[\r\n]+", "", user_code)
     solution_code <- gsub(" ", "", solution_code)
     if (user_code %in% solution_code) {
+      #assign("lrnClassif", envir$lrnClassif, envir = .GlobalEnv)
+      #do.call(get(user_code), list(), .GlobalEnv)
+      #assign("lrnClassif", get(user_code), envir = .GlobalEnv)
+      eval(parse(text=user_code))
       return(
         list(
           message = "Everything looks fine! Run your code!",
@@ -176,6 +252,7 @@ checker_predict <-
     user_code <- gsub(" |[\r\n]+", "", user_code)
     solution_code <- gsub(" ", "", solution_code)
     if (user_code %in% solution_code) {
+      eval(parse(text=user_code))
       return(
         list(
           message = "Everything looks fine! Run your code!",
@@ -217,34 +294,6 @@ checker_resampling <-
       return(
         list(
           message = "There is something wrong with your function. Check for spelling errors or if your have used the correct data for training!",
-          correct = FALSE,
-          location = "append"
-        )
-      )
-    }
-  }
-
-checker_data <-
-  function(user_code,
-           solution_code, envir) {
-    print(ls(envir))
-    print(user_code)
-    print(solution_code)
-    user_code <- gsub(" |[\r\n]+", "", user_code)
-    solution_code <- gsub(" ", "", solution_code)
-    if (user_code %in% solution_code) {
-      return(
-        list(
-          message = "Everything looks fine! Run your code!",
-          correct = TRUE,
-          location = "append"
-        )
-      )
-    }
-    else {
-      return(
-        list(
-          message = "There is something wrong with your split. Make sure you use the correct task, the correct split ration (0.8) and the variable name given in the exercise.",
           correct = FALSE,
           location = "append"
         )
