@@ -25,68 +25,41 @@ tutorial_options(
 )
 ```
 
-## 1 The data {data-progressive=FALSE}
-For this exercise we have loaded two very well know data sets, which you will use to build your first mlr3 machine learning project. This will give you an idea of the practical application/implementation of machine learning problems using mlr3.
-Let's have a look into our data sets: 
+## 1 Data {data-progressive=FALSE}
+In this tutorial, we want to give you an idea of how you can use mlr3 to build your own applied machine learning project. mlr3 is an open-source collection of packages providing a unified interface for machine learning in R.
+Throughout the exercise, we will use two well-known data sets: "Boston housing", a regression problem, and "German credit", a classification problem. In general, we will use "Boston housing" as an example and ask you to implement something similar for "German credit".
 
-### 1.1 German credit scoring data 
-The German credit data was originally donated in 1994 by Prof. Dr. Hans Hoffman of the University of Hamburg. A description can be found at the UCI repository. The goal is to classify people by their credit risk (good or bad) using 20 personal, demographic and financial features.
-```{r}
-data("german", package = "rchallenge")
-
-skim(german)
-```
-
-### 1.2 Boston housing data
-Housing data for 506 census tracts of Boston from the 1970 census. The dataframe BostonHousing contains the original data by Harrison and Rubinfeld (1979). In this use case, we want to build a model that predicts the Median value of owner-occupied homes in Boston in $1000’s (medv).
+### 1.1 Boston housing
+[Boston housing](https://www.cs.toronto.edu/~delve/data/boston/bostonDetail.html) contains information on housing for 506 census tracts of the city of Boston from the 1970 census. In this use case, we want to build a model that predicts the median value (in USD 1,000s) of owner-occupied homes in each census tract (medv). This is a regression problem.
 ```{r}
 data("BostonHousing", package = "mlbench")
-
 skim(BostonHousing)
 ```
 
-### 1.3 Data quiz
-```{r quiz_data, echo=FALSE}
-question("Answer the follwoing questions concerning the data sets. There are several correct answers.",
-  answer("There are 1500 observations in the german credit scoring data."),
-  answer("There are 13 features that can be used to predict the median value of an owner occupied home.", correct = TRUE),
-  answer("The german credit scoring problem is a regression problem."),
-  answer("The variable \"credit risk\" can be used as target variable of the german credit scoring problem.", correct = TRUE),
-  allow_retry = TRUE
-)
+### 1.2 German credit
+For the [German credit](https://archive.ics.uci.edu/ml/datasets/statlog+(german+credit+data)) data, we are interested in predicting a person's credit risk (good or bad), by using information contained in 20 features describing an individual's personal, demographic and financial status. This is a binary classification problem.
+```{r}
+data("german", package = "rchallenge")
+skim(german)
 ```
+
 
 ## 2 Tasks
-Mlr3 consists of numerous classes, however there are some that you will most likely encounter in every
-machine learning problem. The first class we look into is the so called Task class.
+In mlr3, we usually start by specifying *what* should be modeled. This is called "task". A task describes the type of machine learning problem, with the most common ones being regression and classification. Furthermore, the task contains the data, the target variable, and a few other elements.
 
-### 2.1 A theoretical look into tasks
-```{r quiz_task, echo=FALSE}
-question("Answer the follwoing questions concerning the task class. There are several correct answers.",
-  answer("Tasks define our data backend.", correct = TRUE),
-  answer("Tasks allow us to specify how we want to solve our problem at hand."),
-  answer("Tasks store meta-information about our data (e.g. which variable is the target etc.)", correct = TRUE),
-  allow_retry = TRUE
-)
-``` 
-
-<div id="filter-hint">
-**Hint:** Take a look into the mlr3 documentation of tasks at https://mlr3.mlr-org.com/reference/Task.html.
-</div>
-
-### 2.2 Defining a task
-Now let's use tasks in practice. There are several ways to define a task in mlr3. We have already instantiated the task for our regression problem:  
+### 2.1 Defining a task
+In order to define a task with mlr3, we need to create an object: for regression problems, this is an object of class "TaskRegr", for classification problems, an object of class "TaskClassif". There are several ways to define a task in mlr3. If we wanted to instantiat the task for our regression problem, we could use the following code:  
 ```{r}
-taskRegr = as_task_regr(BostonHousing, id = "BostonHousing", target = "medv")
+taskRegr = as_task_regr(x = BostonHousing, id = "BostonHousing", target = "medv")
 ```
 
-Now, we also want to define a task for our classification problem. Create a new classification task!  
+In a similar manner, we want to define a task for our classification problem. Create a new classification task for the German credit problem!  
 
 <div id="task-formal">
-**Note:** You can proceed in a similar way to the regression task, but you can also choose a different path. The only thing that matters is that you instantiate an object of Class Task_Classif with the correct backent and target.  
+**Note:** You can proceed in a way similar to the regression task, but there is more than one option to do this with mlr3. The only thing that matters is that you instantiate an object of class "TaskClassif" with the correct data backend and target variable. Take a look into the mlr3 documentation of tasks with '?mlr3::Task'
 </div>
 
-To test your code click "Submit answer". To run your code click "Run code".
+To test your code click "Submit Answer". To run your code click "Run Code".
 
 ```{r task, exercise=TRUE}
 taskClassif = "your code"
@@ -97,25 +70,30 @@ checker_endpoint()
 ```
 
 ```{r task-hint-1}
-#Concerning the target variable think about your answer from 1.3
+# Concerning the data backend and target variable, take a look at section 1.1
 ```
 
 ```{r task-hint-2}
 taskClassif = as_task_classif("your code")
 ```
 
-
-This is your code playground. In these chunks you can have a further look into your instantiated objects. 
+This is your code playground. You can use this chunk to take a further look at the objects that we have instantiated.
 ```{r pg1, exercise=TRUE}
 
 ```
 
-## 3 The train and test split
+### 2.2 Questions
+```{r quiz_task, echo=FALSE}
+question("Which of the following statements are true?",
+  answer("Tasks objects contain the data backend.", correct = TRUE),
+  answer("When we instantiate a task, we have to specify the learner we want to solve it with."),
+  answer("Tasks store meta-information about our data (e.g., the names and types of the feature variables in the data)", correct = TRUE),
+  allow_retry = TRUE
+)
+``` 
 
-### 3.1 Creatig a train/test split 
-As we don't want to use the same data set for testing and training we split the backends of our tasks into  separate training and test sets.
-
-For the regression problem we use the partition() function to split the ids of the data points into train and test set.
+### 2.3 Creating a train/test split 
+Often, it is not a good idea to evaluate a model's performance on the same observations that we use for training the model. In mlr3, we can use the partition() function to assign the ids of a task object to either the train or the test set. Here, we use 80% of the observations for training and 20% for testing (selected randomly):
 ```{r}
 splitsRegr <-  mlr3::partition(taskRegr, ratio = 0.8)
 ```
@@ -124,8 +102,7 @@ Now it's your turn. Split the ids of the backend of taskClassif into ids for tra
 
 <div id="split-hint">
 **Note:** You don't have to use the partition()-function! 
-In the end the only thing that matters is that you have a named list consisting of two integer vectors, containing the corresponding ids of the train/test data points. It must be a named list (names: "train " and "test")
-the train/test set. 
+The only thing that matters is that you have a named list (names: "train " and "test") consisting of two integer vectors which contain the corresponding ids of the train/test observations.
 </div>
 
 ```{r data, exercise=TRUE, exercise.reveal_solution = FALSE}
@@ -136,27 +113,17 @@ splitsClassif <- "your code"
 checker_endpoint()
 ```
 
-## 4 Learner
-Now you already know that tasks are primarily relevant for the underlying data of an ML problem. The actual learning is done via the so called learner class.
 
-### 4.1 Learner quiz
-Remember the HRO concept, where we've defined learning as:  
-**learning = Hypothesis space + Risk + Optimization** 
+## 3 Learner
+After we have defined *what* should be modeled with a task, we can now specify *how*. The actual learning is done via the so called "learner" class.
 
-```{r quiz_learner, echo=FALSE}
-question("How is HRO implemeted in mlr3?. There are several correct answers.",
-  answer("After initializing an instance of the learner class this instance/object only contains general information about the chosen model class (functional form of f).", correct = TRUE),
-  answer("The empirical risk can be assed before the training of the learner."),
-  answer("Optimization happens implictly during training og the learner object.", correct = TRUE),
-  allow_retry = TRUE
-)
-``` 
- 
-### 4.2 Defining a learner
-As with the task, we have already defined our learner for the regression problem. Now it's your turn, define a learner using logistic regression.   
+### 3.1 Defining a learner
+In he code chunk below, we have already defined our learner for the regression problem. Here, we use "regr.rpart" to specify that we want to fit a regression tree with the "rpart" package.
 ```{r}
 lrnRegr = lrn("regr.rpart")
 ```
+
+However, for our classification task, we want to train a random forest, specifically, a random forest trained with the "ranger" package. Create a new random forest learner for the German credit classification problem!
 
 ```{r learner, exercise=TRUE}
 lrnClassif = "Your code"
@@ -167,21 +134,22 @@ checker_endpoint()
 ```
 
 <div id="filter-hint">
-**Hint:** Have a look at the learner defintions in mlr3: https://mlr3learners.mlr-org.com/.
+**Hint:** Have a look at the learners available in mlr3 and find the one for "ranger": https://mlr3learners.mlr-org.com/.
 </div>
 
-
-Another code playground
+Another code playground:
 ```{r pg2, exercise=TRUE}
 
 ```
 
-### 4.3 Training a learner
-Now it's time to train our learners and fit a model! We have already done the training of the regression learner. Now it's your turn to train the classification learner we have defined in the previous subtask!
+### 3.2 Training a model
+Now it's time to use our learner to train a model! Again, we have already trained the regression model on the corresponding task, using only the observations reserved for training in our train/test split:
 
 ```{r}
 lrnRegr$train(taskRegr, row_ids = splitsRegr$train)
 ```
+
+Now it's your turn to use the classification learner we have defined in the previously to fit a model on the corresponding task! For training, make sure to only use the observations you have assigned to the training set.
 
 ```{r train, exercise=TRUE}
 "your code"
@@ -195,28 +163,31 @@ checker_endpoint()
 lrnClassif$train(taskClassif, row_ids = splitsClassif$train)
 ```
 
-### 4.4 A look into the fitted model
-Before we make any predictions, we are interested in information about our fitted model. This information can be accessed via the "$model"-call of a learner.
-Lets' have a look into our regression model which fitted a regression tree:
+### 3.3 A look into the fitted model
+Calling train() on a learner produces a fitted model. This model is stored within the learner object itself and can be accessed via the "$model"-field of a learner.
+Lets' have a look into our random forest:
 ```{r pg3, exercise = TRUE}
-print(lrnRegr$model)
+print(lrnClassif$model)
 ```
-Look into the information of the fitted regression model and check all correct answers: 
+Look into the information of the fitted classification model and check the correct answer: 
 ```{r quiz_model, echo=FALSE}
-question("How many terminal nodes does the fitted tree have?",
-  answer("8", correct = TRUE),
-  answer("14"),
-  answer("12"),
-  answer("5")
+question("What is the out-of-bag (OOB) prediction error of the fitted random forest?",
+  answer("23.5%", correct = TRUE),
+  answer("12.0%"),
+  answer("35.2%"),
+  answer("4.0%")
 )
 ```
 
-### 4.5 Predictions
-Now it's time to make some predictions using our test data.
+### 3.4 Prediction
+Now it's time to make some predictions using our test data. This can be done through the $predict() function of a (trained) learner, which returns an object of class "Prediction". If we print this object, it returns a data.table containing information on the row ids, the true values and predicted response variable.
 
 ```{r}
 predRegr <- lrnRegr$predict(taskRegr, row_ids = splitsRegr$test)
+print(predRegr)
 ```
+
+Generate predictions for the classification problem using the random forest model trained before! Use the test data defined previously!
 
 ```{r predict, exercise=TRUE}
 predClassif <- "your code"
@@ -230,22 +201,17 @@ checker_endpoint()
 predClassif <- lrnClassif$predict(taskClassif, row_ids = splitsClassif$test)
 ```
 
-## 5 Performance evaluation
-Now we want to have look into the performance of our learners. For now, we will evaluate the performance using the performance on our test set. Later in the course you will learn why this is not the preferred way and what state of the art methods there are to test performance. 
+## 4 Performance evaluation
+To estimate the performance of a model on new unseen data, we can use the test data to compare our model's predictions with the true values (holdout splitting). Later in the tutorial, we will consider other (more refined) methods for performance evaluation. 
 
-In mlr3 we can use the "$score()"-function to retrieve several performance measures. For the regression 
-problem we have called the MSE of our model.
+In mlr3, we can use the "$score()"-function to retrieve performance measures from a "Prediction" object. For the regression problem, we could use the mean squared error (MSE) to assess performance.
 
-Let's visualize the predictions of our regression model using th autoplot()-function from mlr3viz: 
-```{r}
-autoplot(predRegr)
-```
 The corresponding MSE is:
 ```{r}
 predRegr$score(measures = msr("regr.mse"))
 ```
 
-Now we want to know the classification error of our classification model. 
+Similarly, evaluate the performance of our classification model with respect to the classification error. 
 ```{r pe, exercise=TRUE}
 "your code"
 ```
