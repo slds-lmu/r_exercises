@@ -50,19 +50,19 @@ In mlr3, we usually start by specifying *what* should be modeled. This is called
 ### 2.1 Defining a task
 In order to define a task with mlr3, we need to create an object: for regression problems, this is an object of class "TaskRegr", for classification problems, an object of class "TaskClassif". There are several ways to define a task in mlr3. If we wanted to instantiat the task for our regression problem, we could use the following code:  
 ```{r}
-taskRegr = as_task_regr(x = BostonHousing, id = "BostonHousing", target = "medv")
+taskRegr <- as_task_regr(x = BostonHousing, id = "BostonHousing", target = "medv")
 ```
 
 In a similar manner, we want to define a task for our classification problem. Create a new classification task for the German credit problem!  
 
 <div id="task-formal">
-**Note:** You can proceed in a way similar to the regression task, but there is more than one option to do this with mlr3. The only thing that matters is that you instantiate an object of class "TaskClassif" with the correct data backend and target variable. Take a look into the mlr3 documentation of tasks with '?mlr3::Task'
+**Note:** You can proceed in a way similar to the regression task, but there is more than one option to do this with mlr3. The only thing that matters is that you instantiate an object of class "TaskClassif" with the correct data backend and "credit_risk" as target variable. Take a look into the mlr3 documentation of tasks with '?mlr3::Task'
 </div>
 
 To test your code click "Submit Answer". To run your code click "Run Code".
 
 ```{r task, exercise=TRUE}
-taskClassif = "your code"
+taskClassif <- "your code"
 ```
 
 ```{r task-check}
@@ -70,11 +70,7 @@ checker_endpoint()
 ```
 
 ```{r task-hint-1}
-# Concerning the data backend and target variable, take a look at section 1.1
-```
-
-```{r task-hint-2}
-taskClassif = as_task_classif("your code")
+taskClassif <- as_task_classif("your code")
 ```
 
 This is your code playground. You can use this chunk to take a further look at the objects that we have instantiated.
@@ -120,13 +116,13 @@ After we have defined *what* should be modeled with a task, we can now specify *
 ### 3.1 Defining a learner
 In he code chunk below, we have already defined our learner for the regression problem. Here, we use "regr.rpart" to specify that we want to fit a regression tree with the "rpart" package.
 ```{r}
-lrnRegr = lrn("regr.rpart")
+lrnRegr <- lrn("regr.rpart")
 ```
 
 However, for our classification task, we want to train a random forest, specifically, a random forest trained with the "ranger" package. Create a new random forest learner for the German credit classification problem!
 
 ```{r learner, exercise=TRUE}
-lrnClassif = "Your code"
+lrnClassif <- "Your code"
 ```
 
 ```{r learner-check}
@@ -172,7 +168,7 @@ print(lrnClassif$model)
 Look into the information of the fitted classification model and check the correct answer: 
 ```{r quiz_model, echo=FALSE}
 question("What is the out-of-bag (OOB) prediction error of the fitted random forest?",
-  answer("23.5%", correct = TRUE),
+  answer("23.88%", correct = TRUE),
   answer("12.0%"),
   answer("35.2%"),
   answer("4.0%")
