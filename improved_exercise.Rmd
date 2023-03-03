@@ -15,13 +15,28 @@ library(mlr3)
 library(mlr3learners)
 library(skimr)
 library(mlr3viz)
+library(rpart.plot)
 
 source("test_functions.R", local = knitr::knit_global())
 
 tutorial_options(
   exercise.checker = checker_endpoint,
   exercise.reveal_solution = FALSE,
-  exercise.completion = FALSE
+  exercise.completion = FALSE, 
+)
+
+options(
+  tutorial.storage = list(
+  save_object = function(...) { },
+  get_object = function(...) NULL,
+  get_objects = function(...) list(),
+  remove_all_objects = function(...) { }
+  )
+)
+
+tutorial(
+  allow_skip = FALSE,
+  progressive = TRUE
 )
 ```
 
@@ -45,24 +60,24 @@ skim(german)
 
 
 ## 2 Tasks
-In mlr3, we usually start by specifying *what* should be modeled. This is called "task". A task describes the type of machine learning problem, with the most common ones being regression and classification. Furthermore, the task contains the data, the target variable, and a few other elements.
+In mlr3, we usually start by specifying *what* should be modeled. This is called **Task**. A task describes the type of machine learning problem, with the most common ones being regression and classification. Furthermore, the task contains the data, the target variable, and a few other elements.
 
 ### 2.1 Defining a task
-In order to define a task with mlr3, we need to create an object: for regression problems, this is an object of class "TaskRegr", for classification problems, an object of class "TaskClassif". There are several ways to define a task in mlr3. If we wanted to instantiat the task for our regression problem, we could use the following code:  
+In order to define a task with mlr3, we need to create an object: for regression problems, this is an object of class **TaskRegr**, for classification problems, an object of class **TaskClassif**. There are several ways to define a task in mlr3. If we wanted to instantiate the task for our regression problem, we could use the following code:  
 ```{r}
-taskRegr <- as_task_regr(x = BostonHousing, id = "BostonHousing", target = "medv")
+task_regr <- as_task_regr(x = BostonHousing, id = "BostonHousing", target = "medv")
 ```
 
 In a similar manner, we want to define a task for our classification problem. Create a new classification task for the German credit problem!  
 
 <div id="task-formal">
-**Note:** You can proceed in a way similar to the regression task, but there is more than one option to do this with mlr3. The only thing that matters is that you instantiate an object of class "TaskClassif" with the correct data backend and "credit_risk" as target variable. Take a look into the mlr3 documentation of tasks with '?mlr3::Task'
+**Note:** You can proceed in a way similar to the regression task, but there is more than one option to do this with mlr3. The only thing that matters is that you instantiate an object called `task_classif` of class TaskClassif with the correct data backend and `credit_risk` as target variable. Take a look into the mlr3 documentation of tasks with '?mlr3::Task'
 </div>
 
 To test your code click "Submit Answer". To run your code click "Run Code".
 
 ```{r task, exercise=TRUE}
-taskClassif <- "your code"
+task_classif <- "your code"
 ```
 
 ```{r task-check}
@@ -70,12 +85,7 @@ checker_endpoint()
 ```
 
 ```{r task-hint-1}
-taskClassif <- as_task_classif("your code")
-```
-
-This is your code playground. You can use this chunk to take a further look at the objects that we have instantiated.
-```{r pg1, exercise=TRUE}
-
+task_classif <- as_task_classif("your code")
 ```
 
 ### 2.2 Questions
@@ -89,20 +99,20 @@ question("Which of the following statements are true?",
 ``` 
 
 ### 2.3 Creating a train/test split 
-Often, it is not a good idea to evaluate a model's performance on the same observations that we use for training the model. In mlr3, we can use the partition() function to assign the ids of a task object to either the train or the test set. Here, we use 80% of the observations for training and 20% for testing (selected randomly):
+Often, it is not a good idea to evaluate a model's performance on the same observations that we use for training the model. In mlr3, we can use the `partition()`-function to assign the ids of a task object to either the train or the test set. Here, we use 80% of the observations for training and 20% for testing (selected randomly):
 ```{r}
-splitsRegr <-  mlr3::partition(taskRegr, ratio = 0.8)
+split_regr <-  mlr3::partition(task_regr, ratio = 0.8)
 ```
 
-Now it's your turn. Split the ids of the backend of taskClassif into ids for training and testing using a ratio of 0.8. 
+Now it's your turn. Split the ids of the backend of `task_classif` into ids for training and testing using a ratio of 0.8. 
 
 <div id="split-hint">
-**Note:** You don't have to use the partition()-function! 
-The only thing that matters is that you have a named list (names: "train " and "test") consisting of two integer vectors which contain the corresponding ids of the train/test observations.
+**Note:** You don't have to use the `partition()`-function! 
+The only thing that matters is that you have a named list (variable name: `split_classif`) consisting of two integer vectors (names: `train` and `test`) which contain the corresponding ids of the train/test observations.
 </div>
 
 ```{r data, exercise=TRUE, exercise.reveal_solution = FALSE}
-splitsClassif <- "your code"
+split_classif <- "your code"
 ```
 
 ```{r data-check}
@@ -111,38 +121,40 @@ checker_endpoint()
 
 
 ## 3 Learner
-After we have defined *what* should be modeled with a task, we can now specify *how*. The actual learning is done via the so called "learner" class.
+After we have defined *what* should be modeled with a task, we can now specify *how*. The actual learning is done via the so called **Learner**-class in mlr3.
 
 ### 3.1 Defining a learner
-In he code chunk below, we have already defined our learner for the regression problem. Here, we use "regr.rpart" to specify that we want to fit a regression tree with the "rpart" package.
-```{r}
-lrnRegr <- lrn("regr.rpart")
+
+For the purpose of this exercise we will continue with a train-test split provided by us: 
+```{r, eval=FALSE}
+split_classif <- mlr3::partition(task_classif, ratio = 0.8)
 ```
 
-However, for our classification task, we want to train a random forest, specifically, a random forest trained with the "ranger" package. Create a new random forest learner for the German credit classification problem!
+In the code chunk below, we have already defined our learner for the regression problem. Here, we use `regr.rpart` to specify that we want to fit a regression tree with the rpart-package.
+```{r}
+lrn_regr <- lrn("regr.rpart")
+```
+
+For our classification task we want to use a classification tree. Create a new classification tree learner for the German credit classification problem!
 
 ```{r learner, exercise=TRUE}
-lrnClassif <- "Your code"
+lrn_classif <- "Your code"
+```
+
+```{r learner-hint-1}
+"Have a look at the learners available in mlr3 and find the one for ranger: https://mlr3learners.mlr-org.com/"
 ```
 
 ```{r learner-check}
 checker_endpoint()
 ```
 
-<div id="filter-hint">
-**Hint:** Have a look at the learners available in mlr3 and find the one for "ranger": https://mlr3learners.mlr-org.com/.
-</div>
-
-Another code playground:
-```{r pg2, exercise=TRUE}
-
-```
 
 ### 3.2 Training a model
 Now it's time to use our learner to train a model! Again, we have already trained the regression model on the corresponding task, using only the observations reserved for training in our train/test split:
 
 ```{r}
-lrnRegr$train(taskRegr, row_ids = splitsRegr$train)
+lrn_regr$train(task = task_regr, row_ids = split_regr$train)
 ```
 
 Now it's your turn to use the classification learner we have defined in the previously to fit a model on the corresponding task! For training, make sure to only use the observations you have assigned to the training set.
@@ -155,15 +167,12 @@ Now it's your turn to use the classification learner we have defined in the prev
 checker_endpoint()
 ```
 
-```{r train-solution}
-lrnClassif$train(taskClassif, row_ids = splitsClassif$train)
-```
 
 ### 3.3 A look into the fitted model
-Calling train() on a learner produces a fitted model. This model is stored within the learner object itself and can be accessed via the "$model"-field of a learner.
+Calling  the `train()`-function on a learner produces a fitted model. This model is stored within the learner object itself and can be accessed via the "$model"-field of a learner.
 Lets' have a look into our random forest:
 ```{r pg3, exercise = TRUE}
-print(lrnClassif$model)
+print(lrn_classif$model)
 ```
 Look into the information of the fitted classification model and check the correct answer: 
 ```{r quiz_model, echo=FALSE}
@@ -175,39 +184,45 @@ question("What is the out-of-bag (OOB) prediction error of the fitted random for
 )
 ```
 
-### 3.4 Prediction
-Now it's time to make some predictions using our test data. This can be done through the $predict() function of a (trained) learner, which returns an object of class "Prediction". If we print this object, it returns a data.table containing information on the row ids, the true values and predicted response variable.
-
-```{r}
-predRegr <- lrnRegr$predict(taskRegr, row_ids = splitsRegr$test)
-print(predRegr)
+Using the `rpart.plot`-package we can also visualize our fitted tree. Just hit the "Run"-Button and plot the tree!
+```{r pg4, exercise=TRUE}
+rpart.plot(lrn_classif$model)
 ```
 
-Generate predictions for the classification problem using the random forest model trained before! Use the test data defined previously!
+### 3.4 Prediction
+Now it's time to make some predictions using our test data. This can be done through the `predict()`-function of a (trained) learner, which returns an object of class **Prediction**. If we print this object, it returns a `data.table` containing information on the row ids, the true values and predicted response variable.
+
+```{r}
+pred_regr <- lrn_regr$predict(task_regr, row_ids = split_regr$test)
+print(pred_regr)
+```
+
+Generate predictions for the classification problem using the classification tree model trained before! Use the test data defined previously!
 
 ```{r predict, exercise=TRUE}
-predClassif <- "your code"
+pred_classif <- "your code"
 ```
 
 ```{r predict-check}
 checker_endpoint()
 ```
 
-```{r predict-solution}
-predClassif <- lrnClassif$predict(taskClassif, row_ids = splitsClassif$test)
-```
-
 ## 4 Performance evaluation
 To estimate the performance of a model on new unseen data, we can use the test data to compare our model's predictions with the true values (holdout splitting). Later in the tutorial, we will consider other (more refined) methods for performance evaluation. 
 
-In mlr3, we can use the "$score()"-function to retrieve performance measures from a "Prediction" object. For the regression problem, we could use the mean squared error (MSE) to assess performance.
-
-The corresponding MSE is:
+In mlr3, we can use the `score()`-function to retrieve performance measures from a **Prediction** object. For the regression problem, the default measure is the MSE which can be called via: 
 ```{r}
-predRegr$score(measures = msr("regr.mse"))
+pred_regr$score()
 ```
 
-Similarly, evaluate the performance of our classification model with respect to the classification error. 
+Further measures can be retrieved by specifying the respective measure in the function call. For example we can retrieve
+the MAE via: 
+```{r}
+pred_regr$score(measures = msr("regr.mae"))
+```
+
+
+Similarly, evaluate the performance of our classification model with respect to the accuracy of our model. 
 ```{r pe, exercise=TRUE}
 "your code"
 ```
@@ -216,7 +231,10 @@ Similarly, evaluate the performance of our classification model with respect to 
 checker_endpoint()
 ```
 
-```{r pe-solution}
-predClassif$score(measures = msr("classif.ce"))
+```{r pe-hint-1}
+"Have a look at the measures available in mlr3 and find the one for the accuracy ?using mlr3::Measure "
 ```
 
+```{r pe-solution}
+pred_classif$score(measures = msr("classif.acc"))
+```
