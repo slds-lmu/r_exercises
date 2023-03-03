@@ -137,16 +137,22 @@ checker_data <- function(user_code, solution_code, envir) {
                   correct = FALSE,
                   location = "append"))
     }
-    if (length(split$train) != length(split_sol$train) |
-        length(split$test) != length(split_sol$test))  {
-      message <- "Make sure to use the ratio 0.8 and the correct task for creating your split!"
+    if (length(split$train) / length(split$test) != 4)  {
+      message <- "Make sure to use the ratio 0.8 for creating your split!"
       return(list(message = message,
                   correct = FALSE,
                   location = "append"))
     }
     #if () #### Überlappung testen
-    if (length(setdiff(split$test, split$test)) > 0) {
+    if (length(intersect(split$train, split$test)) > 0) {
       message <- "Make sure that your train/test-splits don't overlap!"
+      return(list(message = message,
+                  correct = FALSE,
+                  location = "append"))
+    }
+    #if () #### Korrekte IDs testen
+    if (!setequal(union(split$train, split$test), rep(1:1000))) {
+      message <- "Make sure that your train/test-splits contain all & only ids of the task!"
       return(list(message = message,
                   correct = FALSE,
                   location = "append"))

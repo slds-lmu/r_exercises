@@ -121,28 +121,28 @@ checker_endpoint()
 
 
 ## 3 Learner
-After we have defined *what* should be modeled with a task, we can now specify *how*. The actual learning is done via the so called **Learner**-class in mlr3.
+After we have defined *what* should be modeled with a task, we can now specify *how*. The actual learning is done via the so called **Learner** class in mlr3.
 
 ### 3.1 Defining a learner
 
-For the purpose of this exercise we will continue with a train-test split provided by us: 
+For this exercise,we will continue with the train-test split provided by us: 
 ```{r, eval=FALSE}
 split_classif <- mlr3::partition(task_classif, ratio = 0.8)
 ```
 
-In the code chunk below, we have already defined our learner for the regression problem. Here, we use `regr.rpart` to specify that we want to fit a regression tree with the rpart-package.
+In the code chunk below, we have already defined our learner for the regression problem. Here, we use `regr.ranger` to specify that we want to fit a random forest with the `ranger` package.
 ```{r}
-lrn_regr <- lrn("regr.rpart")
+lrn_regr <- lrn("regr.ranger")
 ```
 
-For our classification task we want to use a classification tree. Create a new classification tree learner for the German credit classification problem!
+For our classification task we want to fit a classification tree with the `rpart` package. Create a new classification tree learner for the German credit classification problem!
 
 ```{r learner, exercise=TRUE}
 lrn_classif <- "Your code"
 ```
 
 ```{r learner-hint-1}
-"Have a look at the learners available in mlr3 and find the one for ranger: https://mlr3learners.mlr-org.com/"
+"Have a look at the learners available in mlr3 and find the one for rpart: https://mlr3learners.mlr-org.com/"
 ```
 
 ```{r learner-check}
@@ -210,19 +210,18 @@ checker_endpoint()
 ## 4 Performance evaluation
 To estimate the performance of a model on new unseen data, we can use the test data to compare our model's predictions with the true values (holdout splitting). Later in the tutorial, we will consider other (more refined) methods for performance evaluation. 
 
-In mlr3, we can use the `score()`-function to retrieve performance measures from a **Prediction** object. For the regression problem, the default measure is the MSE which can be called via: 
+In mlr3, we can use the `score()`-function to retrieve performance measures from a **Prediction** object. For the regression problem, the default measure is the MSE: 
 ```{r}
 pred_regr$score()
 ```
 
-Further measures can be retrieved by specifying the respective measure in the function call. For example we can retrieve
-the MAE via: 
+Other measures can be retrieved by specifying the function call. For example, the mean absolute error (MAE):
 ```{r}
 pred_regr$score(measures = msr("regr.mae"))
 ```
 
 
-Similarly, evaluate the performance of our classification model with respect to the accuracy of our model. 
+Similarly, evaluate our classification model with respect to the accuracy of its predictions on the test data! 
 ```{r pe, exercise=TRUE}
 "your code"
 ```
