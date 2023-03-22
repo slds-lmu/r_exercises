@@ -10,7 +10,7 @@ data("BostonHousing", package = "mlbench")
 ### needed for r example r chunks
 task_regr = as_task_regr(BostonHousing, id = "BostonHousing", target = "medv")
 split_regr <-  mlr3::partition(task_regr, ratio = 0.8)
-lrn_regr = lrn("regr.rpart")
+lrn_regr = lrn("regr.ranger", mtry = 3)
 lrn_regr$train(task_regr, row_ids = split_regr$train)
 lrn_regr$predict(task_regr, row_ids = split_regr$test)
 pred_regr <- lrn_regr$predict(task_regr, row_ids = split_regr$test)
@@ -42,6 +42,9 @@ checker_endpoint <-
     }
     else if (label == "predict") {
       return(checker_predict(user_code, solution_code, envir_result))
+    }
+    else if (label == "hp") {
+      return(checker_hp(envir_result, user_code))
     }
     else if (label == "train") {
       return(checker_train(user_code, solution_code, envir_result))
@@ -123,6 +126,12 @@ checker_data <- function(user_code, solution_code, envir) {
                   location = "append"))
     }
     split <- envir$split_classif
+    if (class(split) != "list"){
+      message <- "Make sure that you initialize a list object!"
+      return(list(message = message,
+                  correct = FALSE,
+                  location = "append"))
+    }
     if (is.null(split$train) | is.null(split$test)) {
       message <- "Make sure that your list contains two elements named \"train\" and \"test\""
       return(list(message = message,
@@ -194,7 +203,26 @@ checker_learner <- function(envir) {
                 location = "append"))
   }
   if (!identical(lrn$param_set$values, lrn_classif_sol$param_set$values)) {
-    message <- "Don't use any different parameter values. Use the default values!"
+    message <- "Only use the default parameter values for now!"
+    return(list(message = message,
+                correct = FALSE,
+                location = "append"))
+  }
+  assign("lrn_classif", lrn_classif_sol, envir = .GlobalEnv)
+  return(list(
+    message = message,
+    correct = TRUE,
+    location = "append"
+  ))
+}
+
+checker_hp <- function(envir, user_code) {
+  message <- "Everything looks fine! Run your code!"
+  lrn_classif_sol <- lrn("classif.rpart", maxdepth = 3)
+  eval(parse(text = user_code))
+  lrn <- envir$lrn_classif
+  if (!identical(lrn$param_set$values, lrn_classif_sol$param_set$values)) {
+    message <- "Make sure to set the correct hyperparameter to the correct value!"
     return(list(message = message,
                 correct = FALSE,
                 location = "append"))
@@ -210,7 +238,7 @@ checker_learner <- function(envir) {
 # Check function for training
 checker_train <-function(user_code, solution_code, envir) {
     message <- "Everything looks fine! Run your code!"
-    lrn_classif_sol <- lrn("classif.rpart")
+    lrn_classif_sol <- lrn("classif.rpart", maxdepth = 3)
     set.seed(123)
     eval(parse(text = user_code))
     set.seed(123)

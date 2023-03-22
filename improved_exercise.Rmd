@@ -142,15 +142,34 @@ lrn_classif <- "Your code"
 ```
 
 ```{r learner-hint-1}
-"Have a look at the learners available in mlr3 and find the one for rpart: https://mlr3learners.mlr-org.com/"
+#Have a look at the learners available in mlr3 and find the one for rpart: https://mlr3learners.mlr-org.com/
 ```
 
 ```{r learner-check}
 checker_endpoint()
 ```
 
+### 3.2 Setting hyperparameters
+Now, we want to further specify certain hyperparameters of our learners. In general, you can specify these hyperparameters during the instantiation of the learner. However, you can also access the values of the parameter set of a learner via `$param_set$values` and set the hyperparameters after you have already defined your learner. For example, we have set the `mtry`-parameter of the regression random forest to 3: 
+```{r, eval=FALSE}
+lrn_regr$param_set$values$mtry <- 3
+```
 
-### 3.2 Training a model
+For our classification tree we want to limit the maximum depth of the tree to 3. Set the relevant hyperparameter of our learner to 3!
+```{r hp, exercise=TRUE}
+"your code"
+```
+
+
+```{r hp-hint-1}
+#You can look at the available hyperparameters of a learner via <name_of_the_learner>$param_set$ids()
+```
+
+```{r hp-check}
+checker_endpoint()
+```
+
+### 3.3 Training a model
 Now it's time to use our learner to train a model! Again, we have already trained the regression model on the corresponding task, using only the observations reserved for training in our train/test split:
 
 ```{r}
@@ -168,28 +187,28 @@ checker_endpoint()
 ```
 
 
-### 3.3 A look into the fitted model
+### 3.4 A look into the fitted model
 Calling  the `train()`-function on a learner produces a fitted model. This model is stored within the learner object itself and can be accessed via the "$model"-field of a learner.
 Lets' have a look into our random forest:
 ```{r pg3, exercise = TRUE}
 print(lrn_classif$model)
 ```
-Look into the information of the fitted classification model and check the correct answer: 
-```{r quiz_model, echo=FALSE}
-question("What is the out-of-bag (OOB) prediction error of the fitted random forest?",
-  answer("23.88%", correct = TRUE),
-  answer("12.0%"),
-  answer("35.2%"),
-  answer("4.0%")
-)
-```
-
 Using the `rpart.plot`-package we can also visualize our fitted tree. Just hit the "Run"-Button and plot the tree!
 ```{r pg4, exercise=TRUE}
 rpart.plot(lrn_classif$model)
 ```
 
-### 3.4 Prediction
+Look into the information of the fitted classification model and check the correct answer: 
+```{r quiz_model, echo=FALSE}
+question("What percentage of observations is predicted as \"bad\"?",
+  answer("36%", correct = TRUE),
+  answer("12%"),
+  answer("8%"),
+  answer("9%")
+)
+```
+
+### 3.5 Prediction
 Now it's time to make some predictions using our test data. This can be done through the `predict()`-function of a (trained) learner, which returns an object of class **Prediction**. If we print this object, it returns a `data.table` containing information on the row ids, the true values and predicted response variable.
 
 ```{r}
@@ -231,7 +250,7 @@ checker_endpoint()
 ```
 
 ```{r pe-hint-1}
-"Have a look at the measures available in mlr3 and find the one for the accuracy ?using mlr3::Measure "
+#Have a look at the measures available in mlr3 and find the one for the accuracy ?using mlr3::Measure
 ```
 
 ```{r pe-solution}
