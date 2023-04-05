@@ -142,7 +142,7 @@ lrn_classif <- "Your code"
 ```
 
 ```{r learner-hint-1}
-#Have a look at the learners available in mlr3 and find the one for rpart: https://mlr3learners.mlr-org.com/
+#Have a look at the learners available in mlr3 and find the one for rpart: https://mlr3.mlr-org.com/reference/mlr_learners.html
 ```
 
 ```{r learner-check}
@@ -250,7 +250,7 @@ checker_endpoint()
 ```
 
 ```{r pe-hint-1}
-#Have a look at the measures available in mlr3 and find the one for the accuracy ?using mlr3::Measure
+#Have a look at the measures available in mlr3 and find the one for the accuracy using ?mlr3::Measure
 ```
 
 ```{r pe-solution}
