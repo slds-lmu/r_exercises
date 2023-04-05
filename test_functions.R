@@ -8,14 +8,12 @@ data("german", package = "rchallenge")
 data("BostonHousing", package = "mlbench")
 
 ### needed for r example r chunks
-taskRegr = as_task_regr(BostonHousing, id = "BostonHousing", target = "medv")
-splitsRegr <-  mlr3::partition(taskRegr, ratio = 0.8)
-lrnRegr = lrn("regr.rpart")
-lrnRegr$train(taskRegr, row_ids = splitsRegr$train)
-lrnRegr$predict(taskRegr, row_ids = splitsRegr$test)
-predRegr <- lrnRegr$predict(taskRegr, row_ids = splitsRegr$test)
-resampling = rsmp("holdout", ratio = 2 / 3)
-resRegr = resample(taskRegr, learner = lrnRegr, resampling = resampling)
+task_regr = as_task_regr(BostonHousing, id = "BostonHousing", target = "medv")
+split_regr <-  mlr3::partition(task_regr, ratio = 0.8)
+lrn_regr = lrn("regr.ranger", mtry = 3)
+lrn_regr$train(task_regr, row_ids = split_regr$train)
+lrn_regr$predict(task_regr, row_ids = split_regr$test)
+pred_regr <- lrn_regr$predict(task_regr, row_ids = split_regr$test)
 
 
 ### Endpoint for various checkerfunctions
@@ -45,6 +43,9 @@ checker_endpoint <-
     else if (label == "predict") {
       return(checker_predict(user_code, solution_code, envir_result))
     }
+    else if (label == "hp") {
+      return(checker_hp(envir_result, user_code))
+    }
     else if (label == "train") {
       return(checker_train(user_code, solution_code, envir_result))
     }
@@ -61,90 +62,115 @@ checker_endpoint <-
 
 # Check function for tasks
 checker_task <- function(envir, backend) {
-  bool_correctness <- TRUE
   message <- "Everything looks fine! Run your code!"
+  task_classif_sol <-
+    as_task_classif(german, id = "GermanCredit", target = "credit_risk")
 
-  # check if variable "taskClassif" (= task specified by user) is in exercise environment
-  if (!("taskClassif" %in% ls(envir))) {
+  # check if variable "task_classif" (= task specified by user) is in exercise environment
+  if (!("task_classif" %in% ls(envir))) {
     message <-
       "Make sure you use the variable name specified in the exercise chunk!"
-    bool_correctness <- FALSE
+    return(list(message = message,
+           correct = FALSE,
+           location = "append"))
   }
-  else {
-    task <- envir$taskClassif
-    # check if task-Variable is of class Task
-    if (!("Task" %in% class(task))) {
-      message <- "Make sure you initialize an object of mlr3 class Task"
-      bool_correctness = FALSE
-    }
-    else {
-      data <-
-        as.data.frame(task$backend$data(
-          rows = seq_len(nrow(backend)),
-          cols = colnames(backend),
-          data_format = "data.table"
-        ))
-      # check backend/data of task -> has to be done this way as data()- is a function and not necessarily the attribute to retrieve all data of the backend
-      if (!identical(data, backend)) {
-        bool_correctness <- FALSE
-        message <-
-          "There is something wrong with the backend you've specified. Make sure to use the correct data set!"
-      }
-      else {
-        ## check target of task
-        taskClassifSol <-
-          as_task_classif(german, id = "GermanCredit", target = "credit_risk")
-        if (task$target_names != taskClassifSol$target_names) {
-          bool_correctness <- FALSE
-          message <-
-            "There is something wrong with the backend you've specified. Make sure to use the correct column as target!"
-        }
-      }
-    }
-    # if user code is correct
-    if (bool_correctness) {
-      assign("taskClassif", task, envir = .GlobalEnv)
-    }
+  task <- envir$task_classif
+  # check if task-Variable is of class Task
+  if (!("Task" %in% class(task))) {
+    message <- "Make sure you initialize an object of mlr3 class Task"
+    return(list(message = message,
+                correct = FALSE,
+                location = "append"))
   }
+  data <-
+    as.data.frame(task$backend$data(
+      rows = seq_len(nrow(backend)),
+      cols = colnames(backend),
+      data_format = "data.table"
+    ))
+  # check backend/data of task -> has to be done this way as data()- is a function and not necessarily the attribute to retrieve all data of the backend
+  if (!identical(data, backend)) {
+    message <-
+      "There is something wrong with the backend you've specified. Make sure to use the correct data set!"
+    return(list(message = message,
+                correct = FALSE,
+                location = "append"))
+  }
+  if (task$target_names != task_classif_sol$target_names) {
+    message <-
+      "There is something wrong with the backend you've specified. Make sure to use the correct column as target!"
+    return(list(message = message,
+                correct = FALSE,
+                location = "append"))
+  }
+  # if user code is correct
+  assign("task_classif", task_classif_sol, envir = .GlobalEnv)
   return(list(
     message = message,
-    correct = bool_correctness,
+    correct = TRUE,
     location = "append"
   ))
-
 }
 
 # Check function for data split
 checker_data <- function(user_code, solution_code, envir) {
-    bool_correctness <- TRUE
-    message <- "Everything looks fine! Run your code!"
-
-    ### User uses the correct vairable name
-    if ("splitsClassif" %in% ls(envir)) {
-      split <- envir$splitsClassif
-      if (is.null(split$train) | is.null(split$test)) {
-        message <-
-          "Make sure that your list contains two elements named \"train\" and \"test\""
-        bool_correctness <- FALSE
-      }
-      else if (!(class(split$train) %in% c("numeric", "integer")) |
-               !(class(split$test) %in% c("numeric", "integer"))) {
-        message <-
-          "Make sure that your list elements are integer vectors"
-        bool_correctness <- FALSE
-      }
-      ### if everything is solved correctly
-      if (bool_correctness)
-        assign("splitsClassif", split, envir = .GlobalEnv)
+  message <- "Everything looks fine! Run your code!"
+    #task_classif <- get("task_classif", envir = .GlobalEnv)
+    set.seed(123)
+    split_sol <- mlr3::partition(task_classif, ratio = 0.8)
+    ### User uses the correct variable name
+    if (!("split_classif" %in% ls(envir))) {
+      message <- "Make sure you use the variable name specified in the exercise chunk!"
+      return(list(message = message,
+                  correct = FALSE,
+                  location = "append"))
     }
-    else {
+    split <- envir$split_classif
+    if (class(split) != "list"){
+      message <- "Make sure that you initialize a list object!"
+      return(list(message = message,
+                  correct = FALSE,
+                  location = "append"))
+    }
+    if (is.null(split$train) | is.null(split$test)) {
+      message <- "Make sure that your list contains two elements named \"train\" and \"test\""
+      return(list(message = message,
+                  correct = FALSE,
+                  location = "append"))
+    }
+    if (!(class(split$train) %in% c("numeric", "integer")) |
+        !(class(split$test) %in% c("numeric", "integer"))) {
       message <-
-        "Make sure you use the variable name specified in the exercise chunk!"
-      bool_correctness <- FALSE
+        "Make sure that your list elements are integer vectors"
+      return(list(message = message,
+                  correct = FALSE,
+                  location = "append"))
     }
+    if (length(split$train) / length(split$test) != 4)  {
+      message <- "Make sure to use the ratio 0.8 for creating your split!"
+      return(list(message = message,
+                  correct = FALSE,
+                  location = "append"))
+    }
+    #if () #### Überlappung testen
+    if (length(intersect(split$train, split$test)) > 0) {
+      message <- "Make sure that your train/test-splits don't overlap!"
+      return(list(message = message,
+                  correct = FALSE,
+                  location = "append"))
+    }
+    #if () #### Korrekte IDs testen
+    if (!setequal(union(split$train, split$test), rep(1:1000))) {
+      message <- "Make sure that your train/test-splits contain all & only ids of the task!"
+      return(list(message = message,
+                  correct = FALSE,
+                  location = "append"))
+    }
+    ### if everything is solved correctly
+    assign("split_classif", split_sol, envir = .GlobalEnv)
     return(list(
       message = message,
-      correct = bool_correctness,
+      correct = TRUE,
       location = "append"
     ))
   }
@@ -152,58 +178,84 @@ checker_data <- function(user_code, solution_code, envir) {
 
 # check function for learner
 checker_learner <- function(envir) {
-  bool_correctness <- TRUE
   message <- "Everything looks fine! Run your code!"
-
-  if (!("lrnClassif" %in% ls(envir))) {
+  lrn_classif_sol <- lrn("classif.rpart")
+  if (!("lrn_classif" %in% ls(envir))) {
     message <-
       "Make sure you use the variable name specified in the exercise chunk!"
-    bool_correctness = FALSE
+    return(list(message = message,
+                correct = FALSE,
+                location = "append"))
   }
-  else {
-    learner <- envir$lrnClassif
-    # check if learner-Variable is of class Learner
-    if (!("Learner" %in% class(learner))) {
-      message <-
-        "Make sure you initialize an object of mlr3 learner class!"
-      bool_correctness = FALSE
-    }
-    else {
-      lrnClassifSol <- lrn("classif.log_reg")
-      if (!(class(learner)[[1]] == class(lrnClassifSol))[[1]]) {
-        bool_correctness <- FALSE
-        message <-
-          "Make sure you initialize a learner using logistic regression!"
-      }
-    }
-    if (bool_correctness)
-      assign("lrnClassif", envir$lrnClassif, envir = .GlobalEnv)
+  lrn <- envir$lrn_classif
+  # check if learner-Variable is of class Learner
+  if (!("Learner" %in% class(lrn))) {
+    message <-
+      "Make sure you initialize an object of mlr3 learner class!"
+    return(list(message = message,
+                correct = FALSE,
+                location = "append"))
   }
+  if (!(class(lrn)[[1]] == class(lrn_classif_sol))[[1]]) {
+    message <- "Make sure you initialize a classification tree!"
+    return(list(message = message,
+                correct = FALSE,
+                location = "append"))
+  }
+  if (!identical(lrn$param_set$values, lrn_classif_sol$param_set$values)) {
+    message <- "Only use the default parameter values for now!"
+    return(list(message = message,
+                correct = FALSE,
+                location = "append"))
+  }
+  assign("lrn_classif", lrn_classif_sol, envir = .GlobalEnv)
   return(list(
     message = message,
-    correct = bool_correctness,
+    correct = TRUE,
+    location = "append"
+  ))
+}
+
+checker_hp <- function(envir, user_code) {
+  message <- "Everything looks fine! Run your code!"
+  lrn_classif_sol <- lrn("classif.rpart", maxdepth = 3)
+  eval(parse(text = user_code))
+  lrn <- envir$lrn_classif
+  if (!identical(lrn$param_set$values, lrn_classif_sol$param_set$values)) {
+    message <- "Make sure to set the correct hyperparameter to the correct value!"
+    return(list(message = message,
+                correct = FALSE,
+                location = "append"))
+  }
+  assign("lrn_classif", lrn_classif_sol, envir = .GlobalEnv)
+  return(list(
+    message = message,
+    correct = TRUE,
     location = "append"
   ))
 }
 
 # Check function for training
 checker_train <-function(user_code, solution_code, envir) {
-    user_code <- gsub(" |[\r\n]+", "", user_code)
-    solution_code <- gsub(" ", "", solution_code)
     message <- "Everything looks fine! Run your code!"
-    bool_correctness <- TRUE
-
-    if (user_code %in% solution_code) {
-      eval(parse(text = user_code))
+    lrn_classif_sol <- lrn("classif.rpart", maxdepth = 3)
+    set.seed(123)
+    eval(parse(text = user_code))
+    set.seed(123)
+    lrn_classif_sol$train(row_ids = split_classif$train, task = task_classif)
+    if (!(identical(lrn_classif_sol$model, lrn_classif$model))) {
+      message <- "There is something wrong with your function. Check for spelling errors and that you use the correct data/ids for training!"
+         return(list(
+             message = message,
+             correct = FALSE,
+             location = "append"
+           ))
     }
-    else {
-          message <- "There is something wrong with your function. Check for spelling errors and that you use the correct data/ids for training!"
-          bool_correctness <- FALSE
-    }
+    assign("lrn_classif", lrn_classif_sol, envir = .GlobalEnv)
     return(
       list(
         message = message,
-        correct = bool_correctness,
+        correct = TRUE,
         location = "append"
       )
     )
@@ -212,114 +264,63 @@ checker_train <-function(user_code, solution_code, envir) {
 
 # Check function for prediction
 checker_predict <- function(user_code, solution_code, envir) {
-    user_code <- gsub(" |[\r\n]+", "", user_code)
-    solution_code <- gsub(" ", "", solution_code)
+    #lrn_classif <- get("lrn_classif", envir = .GlobalEnv)
+    preds <- lrn_classif$predict(row_ids = split_classif$test, task = task_classif)
     message <- "Everything looks fine! Run your code!"
-    bool_correctness <- TRUE
-
-    if (user_code %in% solution_code) {
-      eval(parse(text = user_code))
+    if (!("pred_classif" %in% ls(envir))) {
+      message <-
+        "Make sure you use the variable name specified in the exercise chunk!"
+      return(list(message = message,
+                  correct = FALSE,
+                  location = "append"))
     }
-    else {
-      message <- "There is something wrong with your function. Check for spelling errors and that you use the correct data/ids for training!"
-      bool_correctness <- FALSE
+    pred_classif <- envir$pred_classif
+    # check if prediction-Variable is of class Prediction
+    if (!("PredictionClassif" %in% class(pred_classif))) {
+      message <-
+        "Make sure you use the predict()-function on the correct task!"
+      return(list(message = message,
+                  correct = FALSE,
+                  location = "append"))
     }
+    if (!identical(pred_classif$row_ids,split_classif$test)){
+      message <-
+        "Make sure you use the correct data set for prediction!"
+      return(list(message = message,
+                  correct = FALSE,
+                  location = "append"))
+    }
+    #eval(parse(text = user_code))
+    assign("pred_classif", preds, envir = .GlobalEnv)
     return(
       list(
         message = message,
-        correct = bool_correctness,
+        correct = TRUE,
         location = "append"
       )
     )
   }
 
 
-checker_resampling <-
-  function(user_code,
-           solution_code, envir) {
-    user_code <- gsub(" |[\r\n]+", "", user_code)
-    solution_code <- gsub(" ", "", solution_code)
-    if (user_code %in% solution_code) {
-      return(
-        list(
-          message = "Everything looks fine! Run your code!",
-          correct = TRUE,
-          location = "append"
-        )
-      )
-    }
-    else {
-      return(
-        list(
-          message = "There is something wrong with your function. Check for spelling errors or if your have used the correct data for training!",
-          correct = FALSE,
-          location = "append"
-        )
-      )
-    }
-  }
-
-checker_pe <-
-  function(user_code,
-           solution_code, envir) {
-    user_code <- gsub(" |[\r\n]+", "", user_code)
-    solution_code <- gsub(" ", "", solution_code)
-    if (user_code %in% solution_code) {
-      return(
-        list(
-          message = "Everything looks fine! Run your code!",
-          correct = TRUE,
-          location = "append"
-        )
-      )
-    }
-    else {
-      return(
-        list(
-          message = "Make sure you use the classification error as measure and the correct predictions!",
-          correct = FALSE,
-          location = "append"
-        )
-      )
-    }
-  }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-### needed for checks in backend
-#taskClassifSol = as_task_classif(german, id = "GermanCredit", target = "credit_risk")
-#lrnClassifSol = lrn("classif.log_reg")
-#lrnClassifSol$train(taskClassifSol)
-#lrnClassifSol$predict(taskClassifSol)
-#splitsClassifSol = mlr3::partition(taskClassifSol, ratio = 0.8)
-#predClassifSol <- lrnClassifSol$predict(taskClassifSol, row_ids = splitsClassifSol$test)
-
-#taskClassif <- as_task_classif(german, id = "GermanCredit", target = "credit_risk")
-#lrnClassif = lrn("classif.log_reg")
-#splitsClassif = mlr3::partition(taskClassif, ratio = 0.8)
-#lrnClassif$train(taskClassif, row_ids = splitsClassif$train)
-#predClassif <- lrnClassif$predict(taskClassif, row_ids = splitsClassif$test)
-
-
-### needed for PE
-#resampling = rsmp("holdout", ratio = 2 / 3)
-#resRegr = resample(taskRegr, learner = lrnRegr, resampling = resampling)
-#resClassSol = resample(taskClassifSol, learner = lrnClassifSol, resampling = resampling)
+ checker_pe <-
+   function(user_code,
+            solution_code, envir) {
+     user_code <- gsub(" |[\r\n]+", "", user_code)
+     solution_code <- gsub(" ", "", solution_code)
+     if (!(user_code %in% solution_code)) {
+       return(
+         list(
+           message = "Make sure to explicitly define the classification error as performance measure",
+           correct = FALSE,
+           location = "append"
+         )
+       )
+     }
+     return(
+       list(
+         message = "Everything looks fine! Run your code!",
+         correct = TRUE,
+         location = "append"
+       )
+     )
+   }
