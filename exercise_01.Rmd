@@ -16,6 +16,7 @@ library(mlr3learners)
 library(skimr)
 library(mlr3viz)
 library(rpart.plot)
+library(ranger)
 
 source("test_functions.R", local = knitr::knit_global())
 
