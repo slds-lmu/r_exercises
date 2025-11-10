@@ -85,8 +85,8 @@ checker_task <- function(envir, backend) {
   data <-
     as.data.frame(task$backend$data(
       rows = seq_len(nrow(backend)),
-      cols = colnames(backend),
-      data_format = "data.table"
+      cols = colnames(backend) # ,
+      # data_format = "data.table"
     ))
   # check backend/data of task -> has to be done this way as data()- is a function and not necessarily the attribute to retrieve all data of the backend
   if (!identical(data, backend)) {
